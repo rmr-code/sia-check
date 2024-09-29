@@ -1,0 +1,44 @@
+services:
+  # this downloads the model once on to host machine and exits
+  model-downloader:
+    build: 
+      context: ./model-downloader
+    volumes:
+      - ./${DATA_DIR}/models:/root/.cache/huggingface  
+    env_file:
+      - .env
+
+  # this embeddings-server is called from the api to generate embeddings
+  embeddings-server:
+    build: 
+      context: ./embeddings-server
+      dockerfile: Dockerfile
+    #image: rmrhub/sia-embeddings-server:v0.1.1
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env  # Use environment variables from .env file
+    volumes:
+      - ./${DATA_DIR}:/${DATA_DIR}  # Mount shared data directory
+    depends_on:
+      - model-downloader
+    ports:
+      - "8002:8002"  # Expose port for the embeddings server API    
+
+  # this is the main api-server accessed by the web-server    
+  api-server:
+    build:
+      context: ./api-server
+      dockerfile: Dockerfile
+    hostname: api-server # required for web-server to proxy_pass
+    #image: rmrhub/sia-api-server:v0.1.1
+    environment:
+      - PYTHONUNBUFFERED=1 # can be removed in production
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+    depends_on:
+      - embeddings-server
+    volumes:
+      - ./${DATA_DIR}:/app/${DATA_DIR}  # Shared data directory
