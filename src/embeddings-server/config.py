@@ -11,7 +11,7 @@ class Settings:
         self.embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME")
         self.embedding_model_filename: str = os.getenv("EMBEDDING_MODEL_FILENAME", "pytorch_model.bin") 
         self.no_workers: int = self._get_env_int("EMBEDDINGS_NO_WORKERS", 1)
-        self.hf_api_token: str = os.getenv("HF_API_TOKEN", "NONE")
+        self.hf_api_token: str = os.getenv("HUGGING_FACE_HUB_TOKEN", "NONE")
         
         # Directory paths
         self.data_dir: str = os.getenv("DATA_DIR", "data")

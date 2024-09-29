@@ -10,7 +10,7 @@ from config import settings
 
 # Create an API Router for chat-related routes
 chat_router = APIRouter()
-print("in chat route")
+
 # To get agent details
 @chat_router.get("/{agent_name}")
 def route_get_agent(agent_name: str, request: Request) -> Dict[str, Any]:

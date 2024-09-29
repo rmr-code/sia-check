@@ -22,17 +22,21 @@ auth_router = APIRouter()
 @auth_router.get("/is-admin-password-set")
 async def route_check_admin_password_set(request: Request) -> Dict[str, bool]:
     try:
+        print(1)
         # Verify X-API-Key header
         verify_x_api_key(headers=request.headers)
         # check whether password has been set
+        print(2)
         res = is_admin_password_set()
         # return true or false
         return {"admin_password_set": res}
     
     except HTTPException as e:
+        print(3, str(e))
         # Custom HttpExceptions, pass them to the global handler
         raise e
     except Exception as e:
+        print(4, str(e))
         # Unexpected errors, wrap them in an HttpException with status 500
         raise HTTPException(detail=str(e), status_code=500)
 

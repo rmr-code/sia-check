@@ -5,20 +5,9 @@ import axios from 'axios';
 const X_REQUEST_STR = 'XteNATqxnbBkPa6TCHcK0NTxOM1JVkQl'
 // Create BaseURL
 // uncomment below for development
-const baseUrl = 'http:/localhost:8080';
+//const baseUrl = 'http:/localhost:8080';
 // uncomment below for production
-//const baseUrl = window.location.origin;
-
-
-// Base Axios instance with global settings
-const api = axios.create({
-  baseURL: 'http:/localhost:8080/api/',
-  timeout: 10000,
-  withCredentials: true,
-  headers: {
-    'X-Requested-With': X_REQUEST_STR,
-  },
-});
+const baseUrl = window.location.origin;
 
 // Standard Error handler
 const handleAxiosError = (error) => {
@@ -40,7 +29,7 @@ const handleAxiosError = (error) => {
 // check if admin password set
 export const checkAdminPasswordStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/auth/is-admin-password-set',
+    const response = await axios.get(`${baseUrl}/api/auth/is-admin-password-set`,
       {
         withCredentials: true,
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -56,7 +45,7 @@ export const checkAdminPasswordStatus = async () => {
 // check if admin password set
 export const checkToken = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/auth/check-token', {
+    const response = await axios.get(`${baseUrl}/api/auth/check-token`, {
       withCredentials: true,
       headers: { 'X-Requested-With': X_REQUEST_STR },
     });
@@ -73,7 +62,7 @@ export const setAdminPassword = async (password) => {
     "password": password
   }
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/set-admin-password',
+    const response = await axios.post(`${baseUrl}/api/auth/set-admin-password`,
       data,
       {
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -92,7 +81,7 @@ export const login = async (password) => {
     "password": password
   }
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/login',
+    const response = await axios.post(`{baseUrl}/api/auth/login`,
       data,
       {
         withCredentials: true,
@@ -112,7 +101,7 @@ export const changeAdminPassword = async (currentPassword, newPassword) => {
     "new_password": newPassword,
   }
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/change-admin-password',
+    const response = await axios.post(`${baseUrl}/api/auth/change-admin-password`,
       data,
       {
         withCredentials: true,
@@ -130,7 +119,7 @@ export const changeAdminPassword = async (currentPassword, newPassword) => {
 export const logout = async (password) => {
   const data = {}
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/logout',
+    const response = await axios.post(`${baseUrl}/api/auth/logout`,
       data,
       {
         withCredentials: true,
@@ -146,7 +135,7 @@ export const logout = async (password) => {
 // get all agents
 export const getAgents = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/agents',
+    const response = await axios.get(`${baseUrl}/api/agents`,
       {
         withCredentials: true,
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -161,7 +150,7 @@ export const getAgents = async () => {
 // get agent by name
 export const getAgent = async (agentname) => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/agents/${agentname}`,
+    const response = await axios.get(`${baseUrl}/api/agents/${agentname}`,
       {
         withCredentials: true,
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -206,7 +195,7 @@ export const saveAgent = async (agentname, formData) => {
 // get agent for chat which is a subset of normal get agent
 export const getAgentForChat = async (agentname) => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/chat/${agentname}`,
+    const response = await axios.get(`${baseUrl}/api/chat/${agentname}`,
       {
         withCredentials: true,
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -221,7 +210,7 @@ export const getAgentForChat = async (agentname) => {
 // submit chat prompt to llm
 export const submitChatPrompt = async (agentname, data) => {
   try {
-    const response = await axios.post(`http://localhost:8080/api/chat/${agentname}`,
+    const response = await axios.post(`${baseUrl}/api/chat/${agentname}`,
       data,
       {
         withCredentials: true,

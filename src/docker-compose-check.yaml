@@ -1,0 +1,14 @@
+services:
+  llm-server:
+     image: vllm/vllm-openai:latest
+     ports:
+       - "8000:8000"
+     volumes:
+       - ~/.cache/huggingface:/root/.cache/huggingface
+     env_file:
+       - .env
+     environment:
+       - DTYPE=float16
+     ipc: "host"
+     #runtime: nvidia
+     command: ["--model", "${LLM_MODEL_NAME}"]
