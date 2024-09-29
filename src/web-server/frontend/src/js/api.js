@@ -4,9 +4,6 @@ import axios from 'axios';
 // The X-Requested-With header
 const X_REQUEST_STR = 'XteNATqxnbBkPa6TCHcK0NTxOM1JVkQl'
 // Create BaseURL
-// uncomment below for development
-//const baseUrl = 'http:/localhost:8080';
-// uncomment below for production
 const baseUrl = window.location.origin;
 
 // Standard Error handler
@@ -81,7 +78,7 @@ export const login = async (password) => {
     "password": password
   }
   try {
-    const response = await axios.post(`{baseUrl}/api/auth/login`,
+    const response = await axios.post(`${baseUrl}/api/auth/login`,
       data,
       {
         withCredentials: true,
@@ -135,7 +132,7 @@ export const logout = async (password) => {
 // get all agents
 export const getAgents = async () => {
   try {
-    const response = await axios.get(`${baseUrl}/api/agents`,
+    const response = await axios.get(`${baseUrl}/api/agents/`,
       {
         withCredentials: true,
         headers: { 'X-Requested-With': X_REQUEST_STR },
@@ -166,8 +163,7 @@ export const getAgent = async (agentname) => {
 export const saveAgent = async (agentname, formData) => {
   try {
     if (agentname) {
-      console.log('this is put')
-      const response = await axios.put(`http://localhost:8080/api/agents/${agentname}`,
+      const response = await axios.put(`${baseUrl}/api/agents/${agentname}`,
         formData,
         {
           withCredentials: true,
@@ -176,8 +172,7 @@ export const saveAgent = async (agentname, formData) => {
       return response.data;
     }
     else {
-      console.log('this is post')
-      const response = await axios.post(`http://localhost:8080/api/agents/`,
+      const response = await axios.post(`${baseUrl}/api/agents/`,
         formData,
         {
           withCredentials: true,

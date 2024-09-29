@@ -32,7 +32,7 @@ def _get_db_connection() -> Tuple[Connection, Cursor]:
 
         # Create users table if it doesn't exist
         _create_table(cursor=cursor)
-
+        print("got connection")
         return conn, cursor
 
     except sqlite3.Error as e:
@@ -169,7 +169,6 @@ def is_admin_password_set() -> bool:
     conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
-
         # Check if admin exists
         cursor.execute("SELECT COUNT(1) FROM users WHERE username = 'admin'")
         return cursor.fetchone()[0] > 0
