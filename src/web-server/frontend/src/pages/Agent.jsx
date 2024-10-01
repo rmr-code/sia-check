@@ -5,7 +5,6 @@ import { getAgent, saveAgent } from '../js/api';
 import toast, { Toaster } from 'react-hot-toast';
 
 import Logo from '../components/Logo';
-import HeaderWithLink from '../components/HeaderWithLink';
 import Footer from '../components/Footer';
 import Modal from '../components/ui/Modal';
 import NameView from '../components/agent/NameView';
@@ -22,7 +21,6 @@ import ButtonFilled from '../components/ui/ButtonFilled';
 import ButtonPlain from '../components/ui/ButtonPlain';
 import InfoBlock from '../components/ui/InfoBlock';
 import ErrorBlock from '../components/ui/ErrorBlock';
-import { getTextAndColor } from '../js/utils';
 
 const Agent = () => {
   const { agentname } = useParams();
@@ -51,7 +49,7 @@ const Agent = () => {
   const [embeddingsStatus, setEmbeddingsStatus] = useState('');
 
   // State for UI interactions
-  const [canEdit, setCanEdit] = useState(true);
+  //const [canEdit, setCanEdit] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false); // state when changes have been made
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -89,13 +87,13 @@ I’m here to help you navigate your insurance needs and provide expert advice o
   ].filter(Boolean);
 
   const prevField = () => {
-      const index = fields.indexOf(field);
-      return index > 0 ? fields[index - 1] : '';
+    const index = fields.indexOf(field);
+    return index > 0 ? fields[index - 1] : '';
   };
 
   const nextField = () => {
-      const index = fields.indexOf(field);
-      return index >= 0 && index < fields.length - 1 ? fields[index + 1] : '';
+    const index = fields.indexOf(field);
+    return index >= 0 && index < fields.length - 1 ? fields[index + 1] : '';
   };
 
   // Modal handlers
@@ -123,10 +121,19 @@ I’m here to help you navigate your insurance needs and provide expert advice o
   useEffect(() => {
     if (!agentname) {
       toast('The above content is placeholder text to serve as an example.');
-      setTimeout(() => {
+      // Set a timeout and store its ID
+      const id = setTimeout(() => {
         setField('name');
         handleShow();
       }, 5000);
+
+      // Save the timeout ID to state
+      setTimeoutId(id);
+
+      // Cleanup function to clear the timeout if the component unmounts
+      return () => {
+        clearTimeout(id);
+      };
     }
   }, [agentname]);
 
@@ -161,7 +168,10 @@ I’m here to help you navigate your insurance needs and provide expert advice o
 
   // Edit handlers
   const handleEdit = (fieldName) => {
-    if(fieldName) {
+    if (fieldName) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       setField(fieldName);
       handleShow();
     }
@@ -229,11 +239,19 @@ I’m here to help you navigate your insurance needs and provide expert advice o
       setIsEditMode(false);
       if (responsedata && responsedata.agent) {
         // reload the agent due to single source of truth
-        window.location.reload();
+        // check if new case
+        if (agentname) {
+          // update agent
+          window.location.reload();
+        }
+        else {
+          // new agent 
+          navigate(`/agent/${responsedata.agent.name}`);
+        }
       }
       else {
         // navigate to agents
-        navigate ('/agents');
+        navigate(`/agents/`);
       }
     } catch (error) {
       setError(error.toString());

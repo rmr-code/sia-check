@@ -23,12 +23,13 @@ def _create_table(cursor: Cursor) -> None:
         CREATE TABLE IF NOT EXISTS agents (
             id INTEGER PRIMARY KEY,
             name TEXT UNIQUE,
-            instructions TEXT,
-            welcome_message TEXT,
-            suggested_prompts TEXT,
-            files TEXT,
-            status TEXT,
-            embeddings_status TEXT,
+            instructions TEXT DEFAULT "",
+            welcome_message TEXT DEFAULT "",
+            suggested_prompts TEXT DEFAULT "",
+            files TEXT DEFAULT "",
+            chat_settings TEXT DEFAULT "",
+            status TEXT DEFAULT "",
+            embeddings_status TEXT DEFAULT "",
             created_on INTEGER,
             updated_on INTEGER
         )
@@ -41,6 +42,7 @@ def row_to_dict(cursor: Cursor, row: tuple) -> Dict[str, str]:
 
 # get all agents
 def get_agents() -> List[Dict[str, str]]:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
         cursor.execute("SELECT * FROM agents")
@@ -48,7 +50,7 @@ def get_agents() -> List[Dict[str, str]]:
         return [row_to_dict(cursor=cursor, row=row) for row in rows]
 
     except sqlite3.Error as e:
-        raise DatabaseException(detail=f"Error when getting agents: {str(e)}")
+        raise DatabaseException(detail=f"Error when getting agents: {str(e)}") from e
     finally:
         if conn:
             conn.close()
@@ -59,15 +61,17 @@ def save_agent(
     instructions: str = "",
     welcome_message: str = "",
     suggested_prompts: str = "",
+    embeddings_status: str = "",
     files: str = ""
 ) -> Dict[str, str]:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
 
         # Check if an agent with the same name already exists
         cursor.execute("SELECT COUNT(1) FROM agents WHERE name = ?", (name,))
         if cursor.fetchone()[0] > 0:
-            raise DatabaseException(detail=f"Agent: {name} already exists: {str(e)}")
+            raise DatabaseException(detail=f"Agent: {name} already exists")
 
         # get current time as an int
         now = int(datetime.now().timestamp())
@@ -78,7 +82,7 @@ def save_agent(
             INSERT INTO agents (name, instructions, welcome_message, suggested_prompts, files, status, embeddings_status, created_on, updated_on)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (name, instructions, welcome_message, suggested_prompts, files, "", "", now, now),
+            (name, instructions, welcome_message, suggested_prompts, files, "", embeddings_status, now, now),
         )
 
         conn.commit()
@@ -89,7 +93,7 @@ def save_agent(
         if row:
             return row_to_dict(cursor=cursor, row=row)
         else:
-            raise DatabaseException(detail=f"Agent could not be retrieved after inserting: {str(e)}")
+            raise DatabaseException(detail="Agent could not be retrieved after inserting")
     except sqlite3.Error as e:
         raise DatabaseException(detail=f"Agent could not be inserted: {str(e)}")
     finally:
@@ -105,13 +109,14 @@ def change_agent(
     files: str = "",
     embeddings_status: str = "",
 ) -> Dict[str, str]:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
 
         # Ensure the agent exists
         cursor.execute("SELECT * FROM agents WHERE name = ?", (name,))
         if not cursor.fetchone():
-            raise DatabaseException(detail=f"Agent: ${name} not found: {str(e)}")
+            raise DatabaseException(detail=f"Agent: ${name} not found")
 
         # time in int
         updated_on = int(datetime.now().timestamp())
@@ -138,7 +143,7 @@ def change_agent(
         if row:
             return row_to_dict(cursor=cursor, row=row)
         else:
-            raise DatabaseException(detail=f"Agent updated could not be retrieved: {str(e)}")
+            raise DatabaseException(detail="Agent updated could not be retrieved")
     except sqlite3.Error as e:
         raise DatabaseException(detail=f"Error in updating agent {name}: {str(e)}")
     finally:
@@ -147,13 +152,14 @@ def change_agent(
 
 # update embedding_status
 def update_agent_embeddings_status(name: str, embeddings_status: str = "") -> None:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
 
         # Ensure the agent exists
         cursor.execute("SELECT * FROM agents WHERE name = ?", (name,))
         if not cursor.fetchone():
-            raise DatabaseException(detail=f"Agent: ${name} not found in update embeddings status: {str(e)}")
+            raise DatabaseException(detail=f"Agent: ${name} not found in update embeddings status")
 
         updated_on = int(datetime.now().timestamp())
 
@@ -174,8 +180,8 @@ def update_agent_embeddings_status(name: str, embeddings_status: str = "") -> No
         if conn:
             conn.close()
 
-
 def get_agent(name: str) -> Dict[str, str]:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
         cursor.execute("SELECT * FROM agents WHERE name = ?", (name,))
@@ -183,7 +189,7 @@ def get_agent(name: str) -> Dict[str, str]:
         if row:
             return row_to_dict(cursor=cursor, row=row)
         else:
-            raise DatabaseException(detail=f"Agent {name} not found: {str(e)}")
+            raise DatabaseException(detail=f"Agent {name} not found")
     except sqlite3.Error as e:
         raise DatabaseException(detail=f"Error in retrieving agent:{name}: {str(e)}")
     finally:
@@ -192,12 +198,13 @@ def get_agent(name: str) -> Dict[str, str]:
 
 # delete agent
 def delete_agent(name: str) -> None:
+    conn, cursor = None, None
     try:
         conn, cursor = _get_db_connection()
         # Check if the agent exists before attempting to delete
         cursor.execute("SELECT * FROM agents WHERE name = ?", (name,))
         if not cursor.fetchone():
-            raise DatabaseException(detail=f"Agent:{name} not found: {str(e)}")
+            raise DatabaseException(detail=f"Agent:{name} not found:")
 
         # Delete the agent record from the database
         cursor.execute("DELETE FROM agents WHERE name = ?", (name,))

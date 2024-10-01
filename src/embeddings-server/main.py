@@ -23,15 +23,12 @@ client = chromadb.PersistentClient(path=settings.store_dir)
 
 # Helper function to notify app server
 async def notify_app_server(agent_name: str) -> None:
+    # set the url and headers
     url = f"http://{settings.api_server}:{settings.api_server_port}/api/agents/{agent_name}/update-embeddings-status"
-    
-    headers: Dict[str, str] = {
-        "X-Requested-With": "XteNATqxnbBkPa6TCHcK0NTxOM1JVkQl"
-    }
-    
+    headers = {settings.header_name: settings.header_key}
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(url=url, headers=headers)
+            response = await client.post(url=url, data=None, headers=headers)
             if response.status_code == 200:
                 print(f"Successfully notified app-server for agent {agent_name}")
             else:
@@ -42,13 +39,10 @@ async def notify_app_server(agent_name: str) -> None:
 # To verify api key when called from api-server
 def verify_x_api_key(headers: Headers) -> str:
     x_api_key: Optional[str] = headers.get(settings.header_name)
-
     if x_api_key is None:
         raise HTTPException(status_code=400, detail="X-API-Key header missing")
-    
     if x_api_key != settings.header_key:
         raise HTTPException(status_code=401, detail="Invalid X-API-Key")
-
     return x_api_key
 
 
@@ -58,7 +52,6 @@ async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)
     try:
         # verify request is from api-server
         verify_x_api_key(headers=request.headers)
-
         # set agent dir
         agent_name: str = body.get("agent_name")
         agent_dir: str = os.path.join(settings.agents_dir, agent_name)
@@ -67,12 +60,10 @@ async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)
         if not os.path.exists(agent_dir):
             raise HTTPException(status_code=404, detail=f"Directory for agent {agent_name} not found")
         
-        print(f"{agent_dir} exists")
         # Delete collection in Store if it exists
         collection_name = f"agent_{agent_name}"
         # Get the list of all collections
         all_collections = client.list_collections()
-
         # Check if the collection exists
         if any(col.name == collection_name for col in all_collections):
             # If the collection exists, delete it
@@ -83,7 +74,6 @@ async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)
 
         # check if dir empty
         if os.listdir(agent_dir):  
-            print("files exist in agent dir")
             # read all documents
             directory_reader = SimpleDirectoryReader(input_dir=agent_dir)
             documents = directory_reader.load_data()
@@ -105,7 +95,6 @@ async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)
 
             # create collection
             collection = client.get_or_create_collection(name=collection_name)
-            print(f"collection {collection_name} created")
             # add embeddings to collection
             for i, chunk in enumerate(chunked_documents):
                 document_id = f"doc_chunk_{i}"
@@ -118,8 +107,7 @@ async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)
             print("no files found in dir")
 
         asyncio.create_task(notify_app_server(agent_name=agent_name))
-        
-        return {"message": f"Embeddings generated and stored for agent {agent_name}"}
+        return {"message": f"Embeddings creation initiated for agent {agent_name}"}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating embeddings: {str(e)}")

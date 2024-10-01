@@ -46,11 +46,11 @@ class Settings:
         self.chat_response_length_short = self._get_env_int("CHAT_RESPONSE_LENGTH_SHORT", 50)
         self.chat_response_length_medium = self._get_env_int("CHAT_RESPONSE_LENGTH_SHORT", 150)
         self.chat_response_length_long = self._get_env_int("CHAT_RESPONSE_LENGTH_SHORT", 300)
-        self.chat_temperature = self._get_env_decimal("CHAT_TEMPERATURE", 0.7)
-        self.chat_max_tokens = self._get_env_int("CHAT_MAX_TOKENS", 200)
-        self.chat_top_p = self._get_env_decimal("CHAT_TOP_P", 0.9)
-        self.chat_frequency_penalty = self._get_env_decimal("CHAT_FREQUENCY_PENALTY", 0.0)  # Values from 0.0 to 2.0
-        self.chat_presence_penalty = self._get_env_decimal("CHAT_PRESENCE_PENALTY", 0.0)
+        self.chat_temperature = self._get_env_float("CHAT_TEMPERATURE", 0.7)
+        self.chat_max_tokens = self._get_env_int("CHAT_MAX_TOKENS", default=200)
+        self.chat_top_p = self._get_env_float("CHAT_TOP_P", 0.9)
+        self.chat_frequency_penalty = self._get_env_float("CHAT_FREQUENCY_PENALTY", 0.0)  # Values from 0.0 to 2.0
+        self.chat_presence_penalty = self._get_env_float("CHAT_PRESENCE_PENALTY", 0.0)
 
         # Allowed hosts handling
         allowed_hosts_str = os.getenv("ALLOWED_HOSTS", "")
@@ -63,13 +63,13 @@ class Settings:
         except ValueError:
             return default
         
-    def _get_env_decimal(self, key: str, default: Decimal) -> Decimal:
-        # Helper function to safely get a decimal environment variable.
+    def _get_env_float(self, key: str, default: float) -> float:
+        # Helper function to safely get a float environment variable.
         try:
-            return Decimal(os.getenv(key, default))
-        except (ValueError, InvalidOperation):
+            return float(os.getenv(key, default))
+        except (ValueError, TypeError):
             return default
-
+    
     def _parse_allowed_hosts(self, hosts_str: str) -> List[str]:
         # Helper function to parse the ALLOWED_HOSTS environment variable into a list.
         # Split the string by commas, strip spaces, and filter out empty strings

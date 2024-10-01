@@ -8,23 +8,23 @@ services:
     env_file:
       - .env
   
-  # llm-server:
-  #    image: vllm/vllm-openai:latest
-  #    ports:
-  #      - "8000:8000"
-  #    volumes:
-  #      - ~/.cache/huggingface:/root/.cache/huggingface
-  #    env_file:
-  #      - .env
-  #    ipc: "host"
-  #    # comment if used in only cpu server environment. 
-  #    deploy:
-  #      resources:
-  #        reservations:
-  #          devices:
-  #            - capabilities: [gpu]
-  #    runtime: nvidia
-  #    command: ["--model", "${LLM_MODEL_NAME}", "--dtype", "${DTYPE}"]
+  llm-server:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    env_file:
+      - .env
+    ipc: "host"
+     # comment if used in only cpu server environment. 
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - capabilities: [gpu]
+    runtime: nvidia
+    command: ["--model", "${LLM_MODEL_NAME}", "--dtype", "${DTYPE}"]
 
   # this embeddings-server is called from the api to generate embeddings
   embeddings-server:
@@ -59,7 +59,9 @@ services:
     depends_on:
       - embeddings-server
     volumes:
-      - ./${DATA_DIR}:/app/${DATA_DIR}  # Shared data directory
+      - ./${DATA_DIR}:/app/${DATA_DIR}:rw  # Shared data directory
+    command: >
+      sh -c "chmod -R 777 /app/${DATA_DIR} && uvicorn main:app --host 0.0.0.0 --port 8080 --workers ${API_NO_WORKERS:-1}"
   
   web-server:
     build:

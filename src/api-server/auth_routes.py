@@ -11,9 +11,7 @@ from auth import (
     verify_x_api_key,
     verify_jwt_token
 )
-from utils import logger
 from config import settings
-import inspect
 
 # Create router
 auth_router = APIRouter()

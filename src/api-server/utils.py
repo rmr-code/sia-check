@@ -37,7 +37,7 @@ def setup_logger() -> logging.Logger:
     
     # Add handlers to the logger
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    #logger.addHandler(file_handler)
     
     return logger
 
@@ -142,9 +142,11 @@ def process_uploaded_files(agent_name: str, new_files: List[Any] = [], deleted_f
 def trigger_embeddings_generation(agent_name: str) -> None:
     def generate_embeddings_task():
         try:
-            url = f"http://{settings.embeddings_server}:{settings.embeddings_server_port}/generate"
-            headers = {"X-Requested-With": "XteNATqxnbBkPa6TCHcK0NTxOM1JVkQl"}
             logger.debug(f"Triggering embeddings generation for agent: {agent_name}")
+
+            # set the url, headers
+            url = f"http://{settings.embeddings_server}:{settings.embeddings_server_port}/generate"
+            headers = {settings.header_name: settings.header_key}
             requests.post(url, json={"agent_name": agent_name}, headers=headers)
         except Exception as e:
             raise ExternalServiceException(detail=f"Failed to trigger embeddings generation for {agent_name}")

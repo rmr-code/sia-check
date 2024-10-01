@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useState, useEffect, useRef} from 'react';
 
 import Card from './ui/Card';
 import Title from './ui/Title';

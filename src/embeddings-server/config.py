@@ -1,7 +1,6 @@
 #config.py
 
 import os
-from typing import List
 
 # Configuration class for loading environment variables and setting static constants
 class Settings:

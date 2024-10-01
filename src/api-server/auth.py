@@ -32,12 +32,9 @@ def _get_db_connection() -> Tuple[Connection, Cursor]:
 
         # Create users table if it doesn't exist
         _create_table(cursor=cursor)
-        print("got connection")
         return conn, cursor
 
     except sqlite3.Error as e:
-        print(settings.database_url)
-        print(e)
         raise DatabaseException(detail="Error connecting to the database.")
 
 # Create users table if it doesn't exist

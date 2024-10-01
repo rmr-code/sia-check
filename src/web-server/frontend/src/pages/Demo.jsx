@@ -5,7 +5,6 @@ import Footer from '../components/Footer';
 import ButtonPlain from '../components/ui/ButtonPlain';
 
 const Demo = () => {
-    console.log('DEMO')
     const { agentname } = useParams();
 
     const iframeref = useRef(null);

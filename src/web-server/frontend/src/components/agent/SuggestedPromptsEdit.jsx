@@ -71,7 +71,7 @@ const SuggestedPromptsEdit = ({
       }
     });
     setPrompts(newPrompts); // Set the updated prompts array
-  }, [])
+  }, [value, prompts])
 
   // Handle change event for an input
   const handlePromptChange = (index) => (e) => {

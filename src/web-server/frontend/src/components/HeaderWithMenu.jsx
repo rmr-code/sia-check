@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, MouseEvent } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { HiMenu } from 'react-icons/hi';
 import Logo from '../components/Logo';
 

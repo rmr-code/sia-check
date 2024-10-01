@@ -1,7 +1,7 @@
 # agent_routes.py
 
+from typing import Dict, Any, List
 from fastapi import APIRouter, Request, Response, Form, File, UploadFile, HTTPException
-from typing import Dict, Any, List, Optional
 from auth import verify_x_api_key, verify_jwt_token
 from agent import (
     save_agent,
@@ -12,7 +12,6 @@ from agent import (
     update_agent_embeddings_status,
 )
 from utils import (
-    logger,
     sanitize_agent_name,
     process_uploaded_files,
     trigger_embeddings_generation,
@@ -29,6 +28,7 @@ def route_agents(request: Request) -> Dict[str, List[Dict[str, Any]]]:
         # Verify API Key and JWT Token
         verify_x_api_key(headers=request.headers)
         access_token = request.cookies.get("access_token")
+
         verify_jwt_token(access_token=access_token)
 
         # Fetch agents
@@ -36,9 +36,7 @@ def route_agents(request: Request) -> Dict[str, List[Dict[str, Any]]]:
         return {"list": agents}
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error fetching agents: {e}")
-        raise e
+         raise HTTPException(detail=f"Unable to get agents: {str(e)}", status_code=500)
 
 
 # Route to create agent and upload optional files
@@ -63,15 +61,16 @@ def route_save_agent(
 
         # Sanitize the name
         sanitized_name = sanitize_agent_name(name)
-
+        print(1)
         # Process and save files
         file_names_str = process_uploaded_files(agent_name=sanitized_name, new_files=new_files)
-
+        print(2, file_names_str)
         embeddings_status = ""
         # Trigger embeddings generation if files are added
-        #if file_names_str:
-            #trigger_embeddings_generation()
-            #embeddings_status = "I"
+        if file_names_str:
+            print(3)
+            trigger_embeddings_generation(agent_name=name)
+            embeddings_status = "I"
 
         # Save agent data
         agent = save_agent(
@@ -79,15 +78,14 @@ def route_save_agent(
             instructions=instructions,
             welcome_message=welcome_message,
             suggested_prompts=suggested_prompts,
+            embeddings_status=embeddings_status,
             files=file_names_str
         )
 
         return {"agent": agent}
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error saving agent: {e}")
-        raise e
+         raise HTTPException(detail=f"Unable to save agent: {str(e)}", status_code=500)
 
 
 # Route to update an agent, handling both field updates and file uploads
@@ -133,9 +131,7 @@ def route_update_agent(
         return {"agent": agent}
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error updating agent: {e}")
-        raise e
+         raise HTTPException(detail=f"Unable to update agent {agent_name}: {str(e)}", status_code=500)
 
 
 # Route to fetch a specific agent by name
@@ -156,9 +152,7 @@ def route_get_agent(agent_name: str, request: Request) -> Dict[str, Any]:
         return {"agent": agent}
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error fetching agent '{agent_name}': {str(e)}")
-        raise e
+         raise HTTPException(detail=f"Unable to retrieve agent {agent_name}: {str(e)}", status_code=500)
 
 
 # Route to delete an agent by name, along with its associated files
@@ -181,9 +175,7 @@ def route_delete_agent(request: Request, agent_name: str) -> Response:
         )
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error deleting agent '{agent_name}': {e}")
-        raise e
+         raise HTTPException(detail=f"Unable to delete agent {agent_name}: {str(e)}", status_code=500)
 
 
 # Route to update embeddings status of an agent
@@ -203,6 +195,4 @@ def route_update_embeddings_status(agent_name: str, request: Request) -> Dict[st
         return {"message": "Embeddings status updated successfully"}
 
     except Exception as e:
-        # Log and propagate exception to global handler
-        logger.error(f"Error updating embeddings status for agent '{agent_name}': {e}")
-        raise e
+         raise HTTPException(detail=f"Unable to update embeddings_status in {agent_name}: {str(e)}", status_code=500)

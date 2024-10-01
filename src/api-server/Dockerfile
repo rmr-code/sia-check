@@ -13,5 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code
 COPY . .
 
-# Command to run the application with the specified number of workers
+# start the uvicorn server with specified number of workers
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8080 --workers ${API_NO_WORKERS:-1}"]

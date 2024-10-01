@@ -5,7 +5,7 @@ from huggingface_hub import hf_hub_download
 repo_id = os.getenv("EMBEDDING_MODEL_NAME")
 token = os.getenv("HF_API_TOKEN")
 filename = os.getenv("EMBEDDING_MODEL_FILENAME")
-model_dir = "/data/models"  # Target directory inside the Docker container
+model_dir = os.path.join(os.getenv("DATA_DIR", "data"), "models")
 
 # Check if the model has already been downloaded
 model_path = os.path.join(model_dir, f"models--{repo_id.replace('/', '--')}")  

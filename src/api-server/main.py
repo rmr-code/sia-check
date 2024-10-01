@@ -26,13 +26,13 @@ app = FastAPI()
 
 # Middleware for CORS handling (if needed)
 # Uncomment and configure based on your use case
-app.add_middleware(
-    CORSMiddleware,
-     allow_origins=["http://localhost:5173"],  # Adjust the origins for your environment
-     allow_credentials=True,
-     allow_methods=["*"],
-     allow_headers=["*"],
- )
+#app.add_middleware(
+#    CORSMiddleware,
+#     allow_origins=["*"],  # Adjust the origins for your environment
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 # Include the routers for modular routes

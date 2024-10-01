@@ -1,14 +1,12 @@
 // Chat.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '../contexts/authcontext';
 import { HiArrowCircleUp } from 'react-icons/hi';
-import { FaRegSnowflake, FaThermometerHalf, FaFire } from 'react-icons/fa';
-import axios from 'axios';
+//import { FaRegSnowflake, FaThermometerHalf, FaFire } from 'react-icons/fa';
 import { v4 as uuidv4 } from 'uuid';
 import ErrorBlock from '../components/ui/ErrorBlock';
-import {getAgentForChat, submitChatPrompt} from '../js/api';
+import { getAgentForChat, submitChatPrompt } from '../js/api';
 
 const Chat = () => {
   const { agentname } = useParams();
@@ -27,7 +25,7 @@ const Chat = () => {
   });
 
   const [messages, setMessages] = useState([
-    { id: uuidv4(),  content: agentData.welcome_message, role: 'system' },
+    { id: uuidv4(), content: agentData.welcome_message, role: 'system' },
   ]);
   const [input, setInput] = useState('');
 
@@ -52,7 +50,7 @@ const Chat = () => {
       try {
         const responsedata = await submitChatPrompt(agentname, data);
         const responseMessage = {
-          id: uuidv4(), 
+          id: uuidv4(),
           content: responsedata.content.toString(),
           role: responsedata.role,
         };
@@ -82,6 +80,37 @@ const Chat = () => {
       );
     };
 
+    const fetchAgentData = async (agentname) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const responsedata = await getAgentForChat(agentname);
+        if (responsedata && responsedata.agent) {
+          // get agent data
+          const data = responsedata.agent;
+          if (data.welcome_message) {
+            const welcomeMessage = {
+              id: uuidv4(),
+              content: data.welcome_message,
+              role: 'system',
+            };
+            setMessages([welcomeMessage]);
+          }
+          const suggested_prompts_arr = string2array(data.suggested_prompts);
+          setAgentData({
+            name: data.name,
+            welcome_message: data.welcome_message,
+            suggested_prompts: suggested_prompts_arr
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load agent data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         handleResize(entry);
@@ -104,45 +133,14 @@ const Chat = () => {
   const string2array = (input) => {
     // Split the input string by commas and limit to 3 elements
     let result = input ? input.split(',').slice(0, 3) : [];
-  
+
     // Fill the array with empty strings if it's less than 3 items
     while (result.length < 3) {
       result.push('');
     }
-  
+
     return result;
   }
-
-  const fetchAgentData = async (agentname) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const responsedata = getAgentForChat(agentname);
-      if (responsedata && responsedata.agent) {
-        // get agent data
-        const data = response.agent;
-        if (data.welcome_message) {
-          const welcomeMessage = {
-            id: uuidv4(), 
-            content: data.welcome_message,
-            role: 'system',
-          };
-          setMessages([welcomeMessage]);
-        }
-        suggested_prompts_arr = string2array(data.suggested_prompts);
-        setAgentData({
-            name: data.name,
-            welcome_message: data.welcome_message,
-            suggested_prompts:  suggested_prompts_arr
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load agent data.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div ref={containerRef} className="flex flex-col h-max p-4 w-full">
@@ -187,27 +185,24 @@ const Chat = () => {
           {/* Response Length Selector */}
           <div className="flex items-center space-x-1 mr-2">
             <button
-              className={`focus:outline-none ${
-                responseLength === 1 ? 'text-green-500' : 'text-gray-400'
-              }`}
+              className={`focus:outline-none ${responseLength === 1 ? 'text-green-500' : 'text-gray-400'
+                }`}
               onClick={() => setResponseLength(1)}
               aria-label="Short Response"
             >
               <span className="text-sm">S</span>
             </button>
             <button
-              className={`focus:outline-none ${
-                responseLength === 2 ? 'text-green-500' : 'text-gray-400'
-              }`}
+              className={`focus:outline-none ${responseLength === 2 ? 'text-green-500' : 'text-gray-400'
+                }`}
               onClick={() => setResponseLength(2)}
               aria-label="Medium Response"
             >
               <span className="text-sm">M</span>
             </button>
             <button
-              className={`focus:outline-none ${
-                responseLength === 3 ? 'text-green-500' : 'text-gray-400'
-              }`}
+              className={`focus:outline-none ${responseLength === 3 ? 'text-green-500' : 'text-gray-400'
+                }`}
               onClick={() => setResponseLength(3)}
               aria-label="Long Response"
             >

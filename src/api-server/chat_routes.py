@@ -5,7 +5,7 @@ from typing import Dict, Any
 from auth import verify_x_api_key
 from agent import get_agent
 from chat import compose_request, send_prompt_vllm
-from utils import query_embeddings, logger
+from utils import query_embeddings
 from config import settings
 
 # Create an API Router for chat-related routes
@@ -29,12 +29,10 @@ def route_get_agent(agent_name: str, request: Request) -> Dict[str, Any]:
             "welcome_message": agent["welcome_message"],
             "suggested_prompts": agent["suggested_prompts"]
         }
-
         return {"agent": chat_agent_info}
 
     except Exception as e:
-        logger.error(f"Error in route_get_agent: {e}")
-        raise e  # Pass the error up to the global exception handler
+         raise HTTPException(detail=f"Unable to get agent {agent_name} in chat: {str(e)}", status_code=500)
 
 
 # to generate user prompt to get LLM response
@@ -65,11 +63,10 @@ def route_post_chat(agent_name: str, request: Request, body: Dict[str, Any] = Bo
 
         print(messages)
         # Send request to the LLM server
-        #llm_response = send_prompt_vllm(messages=messages, response_length=response_length)
+        llm_response = send_prompt_vllm(messages=messages, response_length=response_length)
 
-        #return {"content": llm_response["content"], "role": llm_response["role"]}
-        return {"content": "Response from LLM", "role": "assistant"}
+        return {"content": llm_response["content"], "role": llm_response["role"]}
+        #return {"content": "Response from LLM", "role": "assistant"}
 
     except Exception as e:
-        logger.error(f"Error in route_post_chat: {e}")
-        raise e  # Pass the error up to the global exception handler
+         raise HTTPException(detail=f"Unable to post chat request {agent_name}: {str(e)}", status_code=500)

@@ -113,7 +113,7 @@ export const changeAdminPassword = async (currentPassword, newPassword) => {
 
 
 // set Admin password
-export const logout = async (password) => {
+export const logout = async () => {
   const data = {}
   try {
     const response = await axios.post(`${baseUrl}/api/auth/logout`,

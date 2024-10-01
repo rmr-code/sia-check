@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import Logo from "../components/Logo";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Modal from "../components/ui/Modal";
