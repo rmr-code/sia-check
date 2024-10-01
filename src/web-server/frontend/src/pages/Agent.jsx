@@ -100,6 +100,10 @@ I’m here to help you navigate your insurance needs and provide expert advice o
   const handleShow = () => setShowModal(true);
   const handleClose = () => setShowModal(false);
 
+  // State to store the timeout ID
+  const [timeoutId, setTimeoutId] = useState(null);
+
+
   // Close modal on outside click
   useEffect(() => {
     const handleOutsideClick = (event) => {
