@@ -61,7 +61,6 @@ def route_post_chat(agent_name: str, request: Request, body: Dict[str, Any] = Bo
             user_prompt=input_text
         )
 
-        print(messages)
         # Send request to the LLM server
         llm_response = send_prompt_vllm(messages=messages, response_length=response_length)
 

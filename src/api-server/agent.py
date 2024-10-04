@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple
 from exceptions import DatabaseException
 from config import settings
 
+
 # Get a database connection and cursor. Ensures the agents table is created if it does not exist.
 def _get_db_connection() -> Tuple[Connection, Cursor]:
     try:

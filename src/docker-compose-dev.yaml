@@ -3,8 +3,9 @@ services:
   model-downloader:
     build: 
       context: ./model-downloader
+    image: rmrhub/model-downloader:v0.1.0
     volumes:
-      - ./${DATA_DIR}/models:/root/.cache/huggingface  
+      - ./${DATA_DIR}:/app/${DATA_DIR}  
     env_file:
       - .env
   
@@ -17,12 +18,6 @@ services:
     env_file:
       - .env
     ipc: "host"
-     # comment if used in only cpu server environment. 
-    #deploy:
-    #  resources:
-    #    reservations:
-    #      devices:
-    #        - capabilities: [gpu]
     runtime: nvidia
     command: ["--model", "${LLM_MODEL_NAME}", "--dtype", "${DTYPE}"]
 
@@ -31,17 +26,23 @@ services:
     build: 
       context: ./embeddings-server
       dockerfile: Dockerfile
-    #image: rmrhub/sia-embeddings-server:v0.1.1
+    image: rmrhub/sia-embeddings-server:v0.1.0
     environment:
       - PYTHONUNBUFFERED=1
     env_file:
       - .env  # Use environment variables from .env file
     volumes:
-      - ./${DATA_DIR}:/${DATA_DIR}  # Mount shared data directory
+      - ./${DATA_DIR}:/app/${DATA_DIR}  # Mount shared data directory
     depends_on:
       - model-downloader
     ports:
       - "8002:8002"  # Expose port for the embeddings server API    
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   # this is the main api-server accessed by the web-server    
   api-server:
@@ -49,7 +50,7 @@ services:
       context: ./api-server
       dockerfile: Dockerfile
     hostname: api-server # required for web-server to proxy_pass
-    #image: rmrhub/sia-api-server:v0.1.1
+    image: rmrhub/sia-api-server:v0.1.0
     environment:
       - PYTHONUNBUFFERED=1 # can be removed in production
     env_file:
@@ -60,6 +61,12 @@ services:
       - embeddings-server
     volumes:
       - ./${DATA_DIR}:/app/${DATA_DIR}:rw  # Shared data directory
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     command: >
       sh -c "chmod -R 777 /app/${DATA_DIR} && uvicorn main:app --host 0.0.0.0 --port 8080 --workers ${API_NO_WORKERS:-1}"
   

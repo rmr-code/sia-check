@@ -6,12 +6,49 @@ import os
 class Settings:
     # Initialize settings by loading environment variables and setting defaults
     def __init__(self) -> None:
+        
+        # Enables or disables debug mode.
+        self.DEBUG = os.getenv("DEBUG", "false").strip().lower() == "true"
+        
         # Environment-specific variables from .env
         self.embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME")
         self.embedding_model_filename: str = os.getenv("EMBEDDING_MODEL_FILENAME", "pytorch_model.bin") 
         self.no_workers: int = self._get_env_int("EMBEDDINGS_NO_WORKERS", 1)
         self.hf_api_token: str = os.getenv("HUGGING_FACE_HUB_TOKEN", "NONE")
-        
+
+        # Supported file types
+        self.file_types = os.getenv("FILE_TYPES", "txt,pdf").split(",")
+
+        # Chunking-specific variables
+        self.chunk_size = self._get_env_int("CHUNK_SIZE", 512)
+        self.chunk_overlap = self._get_env_int("CHUNK_OVERLAP", 50)
+        self.chunk_strategy = os.getenv("CHUNK_STRATEGY", "token_sentence")
+        self.tokenizer_model = os.getenv("TOKENIZER_MODEL", "bert-base-uncased")        
+        self.max_input_tokens = self._get_env_int("MAX_INPUT_TOKENS", 2048)
+        self.min_chunk_size = self._get_env_int("MIN_CHUNK_SIZE", 128)
+        self.max_chunk_count = self._get_env_int("MAX_CHUNK_COUNT", 0)
+        if self.max_chunk_count == 0:
+            self.max_chunk_count = None  # Set to None if not specified.
+
+        self.language = os.getenv("LANGUAGE", "en").lower()
+        self.sentence_tokenizer = os.getenv("SENTENCE_TOKENIZER", "nltk").lower()
+        self.semantic_chunking_model = os.getenv("SEMANTIC_CHUNKING_MODEL", "None")
+        if self.semantic_chunking_model == 'None':
+            self.semantic_chunking_model = None
+
+        # encoding
+        self.device = os.getenv("DEVICE", "cpu")
+
+        # query
+        # Number of top similar chunks to retrieve
+        self.top_k = self._get_env_int("TOP_K", 5)
+        self.query_strategy = os.getenv("QUERY_STRATEGY", "simple")
+        self.distance_metric = os.getenv("DISTANCE_METRIC", "cosine")
+
+        # Parameters for MMR & Re-rank strategy
+        self.mmr_lambda = float(os.getenv("MMR_LAMBDA", "0.5")) 
+        self.initial_results = self._get_env_int("INITIAL_RESULTS", 100) 
+
         # Directory paths
         self.data_dir: str = os.getenv("DATA_DIR", "data")
         self.base_dir: str = os.path.abspath(os.path.dirname(__file__))

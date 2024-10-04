@@ -1,28 +1,22 @@
-import os
-from fastapi import FastAPI, HTTPException, Request, Body, Header
+from fastapi import FastAPI, HTTPException, Request, Body
 from starlette.datastructures import Headers
-from llama_index.core.text_splitter import TokenTextSplitter
-from llama_index.core.readers.file.base import SimpleDirectoryReader
-from sentence_transformers import SentenceTransformer
-import chromadb
+from typing import List, Optional
+import os
 import httpx
 import asyncio
 from typing import Optional, List, Dict, Any
+import chromadb
+from sentence_transformers import SentenceTransformer
 
 from config import settings
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.node_parser import SentenceSplitter, TokenTextSplitter
 
-# Initialize FastAPI app
+# Initialize FastAPI
 app = FastAPI()
 
-# Initialize the Hugging Face embedding model
-embedding_model = SentenceTransformer(model_name_or_path=settings.embedding_model_name, 
-                                      cache_folder=settings.models_dir)
-# Initialize the ChromaDB client
-client = chromadb.PersistentClient(path=settings.store_dir)
-
-
 # Helper function to notify app server
-async def notify_app_server(agent_name: str) -> None:
+async def notify_api_server(agent_name: str) -> None:
     # set the url and headers
     url = f"http://{settings.api_server}:{settings.api_server_port}/api/agents/{agent_name}/update-embeddings-status"
     headers = {settings.header_name: settings.header_key}
@@ -45,102 +39,128 @@ def verify_x_api_key(headers: Headers) -> str:
         raise HTTPException(status_code=401, detail="Invalid X-API-Key")
     return x_api_key
 
+# define model_path
+model_path = os.path.join(settings.models_dir, settings.embedding_model_name)
 
-# function to generate document chunks and save in chromadb
+# Initialize the embedding_model
+embedding_model = SentenceTransformer(model_name_or_path=model_path, local_files_only=True)
+
+# Initialize the ChromaDB client
+client = chromadb.PersistentClient(path=settings.store_dir)
+
+# 1. Route to generate chunks and save them in the vector store
 @app.post("/generate")
-async def generate_embeddings(request: Request, body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
-    try:
-        # verify request is from api-server
-        verify_x_api_key(headers=request.headers)
-        # set agent dir
-        agent_name: str = body.get("agent_name")
-        agent_dir: str = os.path.join(settings.agents_dir, agent_name)
-        
-        # check if dir exists
-        if not os.path.exists(agent_dir):
-            raise HTTPException(status_code=404, detail=f"Directory for agent {agent_name} not found")
-        
-        # Delete collection in Store if it exists
-        collection_name = f"agent_{agent_name}"
-        # Get the list of all collections
-        all_collections = client.list_collections()
-        # Check if the collection exists
-        if any(col.name == collection_name for col in all_collections):
-            # If the collection exists, delete it
-            client.delete_collection(collection_name)
+async def generate(
+    request: Request, 
+    body: Dict[str, Any] = Body(...)
+    ) -> Dict[str, str]:
+
+    # verify request is from api-server
+    verify_x_api_key(headers=request.headers)
+    
+    # set agent dir
+    agent_name: str = body.get("agent_name")
+    agent_dir: str = os.path.join(settings.agents_dir, agent_name)
+
+    # check dir existance
+    if not os.path.exists(agent_dir):
+        raise HTTPException(status_code=404, detail="Agent directory not found")
+
+    # set collection name
+    collection_name = f"agent_{agent_name}"
+
+    # Delete collection in Store if it exists
+    collection_name = f"agent_{agent_name}"
+    # Get the list of all collections
+    all_collections = client.list_collections()
+    # Check if the collection exists
+    if any(col.name == collection_name for col in all_collections):
+        # If the collection exists, delete it
+        client.delete_collection(collection_name)
+        if settings.DEBUG:
             print(f"Collection '{collection_name}' deleted successfully.")
-        else:
+    else:
+        if settings.DEBUG:
             print(f"Collection '{collection_name}' does not exist. No action taken.")
 
-        # check if dir empty
-        if os.listdir(agent_dir):  
-            # read all documents
-            directory_reader = SimpleDirectoryReader(input_dir=agent_dir)
-            documents = directory_reader.load_data()
+    # Create a new collection for the agent with the embedding function
+    collection = client.get_or_create_collection(collection_name)
 
-            # split it
-            text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=50)
+    # Read all files in the agent's directory
+    directory_reader = SimpleDirectoryReader(input_dir=agent_dir, required_exts=settings.file_types)
+    documents = directory_reader.load_data()
 
-            # create chunked documents
-            chunked_documents: List[str] = []
-            for doc in documents:
-                chunks = text_splitter.split_text(doc.text)
-                chunked_documents.extend(chunks)
-
-            # create embeddings
-            embeddings: List[Any] = []
-            for chunk in chunked_documents:
-                vector = embedding_model.encode(chunk)
-                embeddings.append(vector)
-
-            # create collection
-            collection = client.get_or_create_collection(name=collection_name)
-            # add embeddings to collection
-            for i, chunk in enumerate(chunked_documents):
-                document_id = f"doc_chunk_{i}"
-                collection.add(
-                    documents=[chunk],
-                    embeddings=[embeddings[i].tolist()],
-                    ids=[document_id]
-                )
+    # create chunked documents
+    chunked_documents: List[str] = []
+    for doc in documents:
+        # for future assume chunk strategy can be per document
+        # hence inside loop
+        # set the parser
+        node_parser = None
+        if settings.chunk_strategy == "fixed":
+            node_parser = TokenTextSplitter(chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap)
         else:
-            print("no files found in dir")
+            # by default "sentence"
+            node_parser = SentenceSplitter(chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap)
 
-        asyncio.create_task(notify_app_server(agent_name=agent_name))
-        return {"message": f"Embeddings creation initiated for agent {agent_name}"}
+        chunks = node_parser.split_text(doc.text)
+        # append it to chunked documents
+        chunked_documents.extend(chunks)
+    
+    # create embeddings
+    embeddings: List[Any] = []
+    for chunk in chunked_documents:
+        vector = embedding_model.encode(chunk)
+        embeddings.append(vector)
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating embeddings: {str(e)}")
-
-
-# function that returns document chunks based on user prompt
-@app.post("/query")
-async def query_embeddings(
-    request: Request,
-    agent_name: str = Body(...),
-    prompt: str = Body(...),
-    top_k: int = Body(5)
-) -> Dict[str, Any]:
-
-    try:
-        verify_x_api_key(headers=request.headers)
-
-        prompt_embedding = embedding_model.encode(prompt)
-        collection_name = f"agent_{agent_name}"
-        collection = client.get_or_create_collection(name=collection_name)
-
-        results = collection.query(
-            query_embeddings=[prompt_embedding.tolist()],
-            n_results=top_k
+    # add embeddings to collection
+    for i, chunk in enumerate(chunked_documents):
+        document_id = f"doc_chunk_{i}"
+        collection.add(
+            documents=[chunk],
+            embeddings=[embeddings[i].tolist()],
+            ids=[document_id]
         )
 
-        document_chunks = results['documents']
-        return {
+
+    # notify api server
+    asyncio.create_task(notify_api_server(agent_name=agent_name))
+
+    # return message
+    return {"status": "Chunks generated and saved in vector store", "chunks_count": len(chunked_documents)}
+
+# 2. Route to query the vector store based on input query and agent
+@app.post("/query")
+async def query(
+    request: Request,
+    agent_name: str = Body(...), 
+    prompt: str  = Body(...)
+    ):
+
+    # verify headers
+    verify_x_api_key(headers=request.headers)
+
+    prompt_embedding = embedding_model.encode(prompt)
+
+    # set collection name
+    collection_name = f"agent_{agent_name}"
+
+    # Retrieve the collection for the agent
+    collection = client.get_or_create_collection(collection_name)
+    # query the collection
+    results = collection.query(
+        query_embeddings=[prompt_embedding.tolist()],
+        n_results=settings.top_k
+    )
+    # get docs from the result
+    document_chunks = results['documents']
+    return {
             "status": "success",
             "agent_name": agent_name,
             "prompt": prompt,
             "results": document_chunks
-        }
+    }
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing query for agent {agent_name}: {str(e)}")
+@app.get("/health")
+async def health_check():
+    return {"status": "OK"}

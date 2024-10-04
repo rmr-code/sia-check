@@ -34,6 +34,9 @@ app = FastAPI()
 #     allow_headers=["*"],
 # )
 
+@app.get("/health")
+async def health_check():
+    return {"status": "OK"}
 
 # Include the routers for modular routes
 app.include_router(router=auth_router, prefix="/api/auth")

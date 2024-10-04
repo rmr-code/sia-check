@@ -53,7 +53,6 @@ def get_max_tokens_by_length(response_length: str) -> int:
     }
     return length_map.get(str(response_length).lower(), settings.chat_response_length_medium)  # Default to medium if not provided
 
-
 # Helper function to call the vllm server
 def send_prompt_vllm(
     messages: list,
