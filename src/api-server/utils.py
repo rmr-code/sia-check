@@ -173,15 +173,11 @@ def query_embeddings(agent_name: str) -> List[Any]:
 
         # Get the response
         response = requests.post(url, json={"agent_name": agent_name, "prompt": ""}, headers=headers)
-        response.raise_for_status()
-
+        #response.raise_for_status()
         response_json = response.json()
-
         # Pick the document chunks
         document_chunks = response_json.get('results', [])
-        document_text_array = [chunk.replace('\n', ' ') for sublist in document_chunks for chunk in sublist]
-
-        return document_text_array
+        return document_chunks
 
     except requests.exceptions.RequestException as e:
         raise ExternalServiceException(detail=f"Error querying embeddings for agent {agent_name}: {str(e)}")

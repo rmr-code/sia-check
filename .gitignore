@@ -4,7 +4,7 @@ node_modules
 .env
 # Ignore everything inside the data folder
 src/data/*
-
+ignore
 # But don't ignore these subdirectories (only include the directories)
 !src/data/agents/
 !src/data/store/

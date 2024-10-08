@@ -21,15 +21,7 @@ def compose_request(instruction, document_chunks, history, user_prompt):
     messages = [
         {"role": "system", "content": instruction}
     ]
-    
-    # Add document chunks as a system message (summarizing or presenting document context)
-    if document_chunks:
-        chunked_documents = "\n\n".join(document_chunks)
-        messages.append({
-            "role": "system",
-            "content": f"The following document chunks are relevant:\n{chunked_documents}"
-        })
-    
+        
     # Add the past history of user prompts and system responses
     for entry in history:
         if "user" in entry:
@@ -38,9 +30,18 @@ def compose_request(instruction, document_chunks, history, user_prompt):
             messages.append({"role": "assistant", "content": entry["assistant"]})
         if "system" in entry:
             messages.append({"role": "system", "content": entry["system"]})
-    
+
+    rag_prompt = ""    
+    # Add document chunks as a system message (summarizing or presenting document context)
+    if document_chunks:
+        rag_prompt += "Using the information below answer the given query:\n"
+        chunked_documents = "\n\n".join(document_chunks)
+        rag_prompt += chunked_documents
+
+    rag_prompt += '\nQuery: '
+    rag_prompt += user_prompt
     # Add the latest user prompt
-    messages.append({"role": "user", "content": user_prompt})
+    messages.append({"role": "user", "content": rag_prompt})
     
     return messages
 

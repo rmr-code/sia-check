@@ -51,16 +51,14 @@ def route_post_chat(agent_name: str, request: Request, body: Dict[str, Any] = Bo
         response_length: str = body.get("response_length", settings.chat_response_length_default)
 
         # Get document text array via embeddings query
-        document_text_array = query_embeddings(agent_name=agent_name)
-
+        document_chunks = query_embeddings(agent_name=agent_name)
         # Compose request to be sent to LLM
         messages = compose_request(
             instruction=agent["instructions"], 
-            document_chunks=document_text_array, 
+            document_chunks=document_chunks, 
             history=messages, 
             user_prompt=input_text
         )
-
         # Send request to the LLM server
         llm_response = send_prompt_vllm(messages=messages, response_length=response_length)
 

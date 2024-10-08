@@ -10,44 +10,33 @@ class Settings:
         # Enables or disables debug mode.
         self.DEBUG = os.getenv("DEBUG", "false").strip().lower() == "true"
         
-        # Environment-specific variables from .env
-        self.embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME")
+        #self.ner_model_name: str = os.getenv("NER_MODEL_NAME", "dbmdz/bert-large-cased-finetuned-conll03-english")
+        self.embedding_model_name: str = os.getenv("EMBEDDING_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2")
         self.embedding_model_filename: str = os.getenv("EMBEDDING_MODEL_FILENAME", "pytorch_model.bin") 
         self.no_workers: int = self._get_env_int("EMBEDDINGS_NO_WORKERS", 1)
         self.hf_api_token: str = os.getenv("HUGGING_FACE_HUB_TOKEN", "NONE")
 
         # Supported file types
-        self.file_types = os.getenv("FILE_TYPES", "txt,pdf").split(",")
+        #self.file_types = os.getenv("FILE_TYPES", "txt,pdf").split(",")
 
         # Chunking-specific variables
+        #self.tokenizer_model_name = os.getenv("CHUNKING_MODEL_NAME", "google-bert/bert-base-uncased")
         self.chunk_size = self._get_env_int("CHUNK_SIZE", 512)
         self.chunk_overlap = self._get_env_int("CHUNK_OVERLAP", 50)
-        self.chunk_strategy = os.getenv("CHUNK_STRATEGY", "token_sentence")
-        self.tokenizer_model = os.getenv("TOKENIZER_MODEL", "bert-base-uncased")        
+        self.chunk_strategy = os.getenv("CHUNK_STRATEGY", "sentence")
         self.max_input_tokens = self._get_env_int("MAX_INPUT_TOKENS", 2048)
         self.min_chunk_size = self._get_env_int("MIN_CHUNK_SIZE", 128)
         self.max_chunk_count = self._get_env_int("MAX_CHUNK_COUNT", 0)
         if self.max_chunk_count == 0:
             self.max_chunk_count = None  # Set to None if not specified.
-
-        self.language = os.getenv("LANGUAGE", "en").lower()
-        self.sentence_tokenizer = os.getenv("SENTENCE_TOKENIZER", "nltk").lower()
-        self.semantic_chunking_model = os.getenv("SEMANTIC_CHUNKING_MODEL", "None")
-        if self.semantic_chunking_model == 'None':
-            self.semantic_chunking_model = None
-
-        # encoding
-        self.device = os.getenv("DEVICE", "cpu")
-
         # query
         # Number of top similar chunks to retrieve
-        self.top_k = self._get_env_int("TOP_K", 5)
-        self.query_strategy = os.getenv("QUERY_STRATEGY", "simple")
+        self.top_n = self._get_env_int("TOP_N", 5)
+        self.retrieval_strategy = os.getenv("RETRIEVAL_STRATEGY", "knn")
+        self.threshold_similarity = self._get_env_float("THRESHOLD_SIMILARITY", 0.8)
+        self.mmr_lambda = self._get_env_float("MMR_LAMBDA", 0.5) 
         self.distance_metric = os.getenv("DISTANCE_METRIC", "cosine")
-
-        # Parameters for MMR & Re-rank strategy
-        self.mmr_lambda = float(os.getenv("MMR_LAMBDA", "0.5")) 
-        self.initial_results = self._get_env_int("INITIAL_RESULTS", 100) 
+        #self.initial_results = self._get_env_int("INITIAL_RESULTS", 100) 
 
         # Directory paths
         self.data_dir: str = os.getenv("DATA_DIR", "data")
@@ -69,6 +58,13 @@ class Settings:
         try:
             return int(os.getenv(key, default))
         except ValueError:
+            return default
+        
+    def _get_env_float(self, key: str, default: float) -> float:
+        # Helper function to safely get a float environment variable.
+        try:
+            return float(os.getenv(key, default))
+        except (ValueError, TypeError):
             return default
 
 # Instantiate settings object
